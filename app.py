@@ -7,7 +7,12 @@ from uuid import uuid4
 # -------------------------
 # CONFIG
 # -------------------------
-BANNED_WORDS = ["hate","fuck", "kill", "stupid"]
+BANNED_WORDS = [
+    "hate", "kill", "stupid", "idiot", "dumb", "fool", "moron",
+    "loser", "bitch", "crap", "ass", "damn", "suck", "shut up",
+    "kill yourself", "die", "trash", "jerk", "ugly", "faggot", "slut", "whore",
+    "retard", "dick", "piss", "hell", "bastard"
+]
 
 # -------------------------
 # DATABASE
