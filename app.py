@@ -209,7 +209,7 @@ if "user_id" not in st.session_state:
 # -------------------------
 # UI
 # -------------------------
-st.title("🕊️ Mini Twitter (SQLite)")
+st.title("🕊️ Mini Twitter")
 
 menu = ["Register", "Login", "Feed", "Post Tweet", "Follow/Unfollow", "Notifications", "Logout"]
 choice = st.sidebar.selectbox("Menu", menu)
