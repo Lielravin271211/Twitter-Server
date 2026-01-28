@@ -281,18 +281,20 @@ choice = st.session_state.choice
 # PAGES
 # -------------------------
 if choice == "Register":
-    if st.button("Register"):
-        st.success(register(
-            st.text_input("Email"),
-            st.text_input("Username"),
-            st.text_input("Password", type="password")
-        ))
+    email = st.text_input("Email")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    # Register button ONLY after username is typed
+    if username.strip() != "":
+        if st.button("Register"):
+            st.success(register(email, username, password))
 
 elif choice == "Login":
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    # Login button ONLY shows after username is typed
+    # Login button ONLY after username is typed
     if username.strip() != "":
         if st.button("Login"):
             if login(username, password):
