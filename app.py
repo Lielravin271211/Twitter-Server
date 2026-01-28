@@ -6,14 +6,23 @@ from uuid import uuid4
 import os
 
 # -------------------------
-# GLOBAL STYLES
+# GLOBAL STYLES (FIXED)
 # -------------------------
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@700&family=Inter:wght@400;600&display=swap');
 
-    header {visibility: hidden;}
+    /* FIX: hide header visually but keep sidebar toggle alive */
+    header {
+        visibility: hidden;
+        height: 0px;
+    }
+
+    section[data-testid="stSidebar"] {
+        top: 0px;
+    }
+
     .stAppViewMain > div:nth-child(1) {padding-top: 0rem;}
     [data-testid="stDecoration"] {display: none;}
 
@@ -85,6 +94,7 @@ st.markdown(
 # CONFIG
 # -------------------------
 BANNED_WORDS = ["hate", "kill", "stupid"]
+POST_COOLDOWN = 20  # seconds
 
 # -------------------------
 # DATABASE
@@ -153,7 +163,7 @@ def has_liked(uid, tid):
     return c.fetchone() is not None
 
 # -------------------------
-# FOLLOW HELPERS (NEW)
+# FOLLOW HELPERS
 # -------------------------
 def follow_user(uid, target_username):
     c.execute("SELECT id FROM users WHERE username=?", (target_username,))
@@ -209,16 +219,25 @@ def logout():
     st.session_state.user_id = None
 
 # -------------------------
-# TWEETS
+# TWEETS (WITH COOLDOWN)
 # -------------------------
 def create_tweet(uid, text, img):
     if not text:
         return "Tweet empty."
+
+    last = st.session_state.last_post_time.get(uid, 0)
+    now = time.time()
+
+    if now - last < POST_COOLDOWN:
+        remaining = int(POST_COOLDOWN - (now - last))
+        return f"Wait {remaining}s before posting again."
+
     c.execute(
         "INSERT INTO tweets VALUES (?, ?, ?, ?, ?)",
-        (str(uuid4()), uid, text, img, time.time())
+        (str(uuid4()), uid, text, img, now)
     )
     conn.commit()
+    st.session_state.last_post_time[uid] = now
     return "Tweet posted."
 
 def delete_tweet(uid, tid):
@@ -253,20 +272,23 @@ def home_feed():
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 
+if "last_post_time" not in st.session_state:
+    st.session_state.last_post_time = {}
+
 # -------------------------
 # UI
 # -------------------------
-st.markdown('<h1 class="main-title">Mini Twitter</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title">🐦 Mini Twitter</h1>', unsafe_allow_html=True)
 
 menu = ["Register", "Login", "Feed", "Post Tweet", "Follow / Unfollow", "Logout"]
 choice = st.sidebar.selectbox("Menu", menu)
 
-# FOLLOW UI (NEW)
+# FOLLOW
 if choice == "Follow / Unfollow":
     if not st.session_state.user_id:
         st.warning("Login first")
     else:
-        target = st.text_input("Username to follow/unfollow")
+        target = st.text_input("Username")
         col1, col2 = st.columns(2)
         if col1.button("Follow"):
             st.success(follow_user(st.session_state.user_id, target))
@@ -296,7 +318,8 @@ elif choice == "Post Tweet":
         text = st.text_area("What's happening?")
         img = st.text_input("Image URL (optional)")
         if st.button("Post"):
-            st.success(create_tweet(st.session_state.user_id, text, img))
+            msg = create_tweet(st.session_state.user_id, text, img)
+            st.success(msg) if "posted" in msg else st.error(msg)
             st.rerun()
 
 # FEED
